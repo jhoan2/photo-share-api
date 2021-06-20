@@ -43,7 +43,7 @@ const resolvers = {
     postPhoto(parent, args) {
       var newPhoto = {
         id: _id++,
-        ...args,
+        ...args.input,
       };
       photos.push(newPhoto);
       return newPhoto;
