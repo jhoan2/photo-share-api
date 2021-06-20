@@ -7,6 +7,7 @@ const typeDefs = `
         name: String 
         avatar: String 
         postedPhotos: [Photo!]! 
+        inPhotos: [Photo!]!
     }
     enum PhotoCategory { 
         SELFIE 
@@ -22,6 +23,7 @@ const typeDefs = `
         description: String
         category: PhotoCategory!
         postedBy: User!
+        taggedUsers: [User!]!
     }
     input PostPhotoInput { 
         name: String! 
@@ -36,7 +38,12 @@ const typeDefs = `
         postPhoto(input: PostPhotoInput!): Photo! 
     }
 `;
-
+var tags = [
+  { photoID: "1", userID: "gPlake" },
+  { photoID: "2", userID: "sSchmidt" },
+  { photoID: "2", userID: "mHattrup" },
+  { photoID: "2", userID: "gPlake" },
+];
 var users = [
   { githubLogin: "mHattrup", name: "Mike Hattrup" },
   { githubLogin: "gPlake", name: "Glen Plake" },
