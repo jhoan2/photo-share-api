@@ -1,5 +1,6 @@
 // 1. Require 'apollo-server'
 const { ApolloServer } = require("apollo-server");
+const { GraphQLScalarType } = require("graphql");
 
 const typeDefs = ` 
     type User { 
@@ -16,6 +17,7 @@ const typeDefs = `
         LANDSCAPE 
         GRAPHIC 
     }
+    scalar DateTime
     type Photo {
         id: ID! 
         url: String! 
@@ -24,6 +26,7 @@ const typeDefs = `
         category: PhotoCategory!
         postedBy: User!
         taggedUsers: [User!]!
+        created: DateTime!
     }
     input PostPhotoInput { 
         name: String! 
@@ -32,12 +35,13 @@ const typeDefs = `
     }
     type Query { 
         totalPhotos: Int!
-        allPhotos: [Photo!]!
+        allPhotos(after: DateTime): [Photo!]!
     } 
     type Mutation { 
         postPhoto(input: PostPhotoInput!): Photo! 
     }
 `;
+
 var tags = [
   { photoID: "1", userID: "gPlake" },
   { photoID: "2", userID: "sSchmidt" },
@@ -75,7 +79,9 @@ var photos = [
 const resolvers = {
   Query: {
     totalPhotos: () => photos.length,
-    allPhotos: () => photos,
+    allPhotos: (parent, args) => {
+      args.after; //Javascript Date Object
+    },
   },
 
   // Mutation and postPhoto resolver
@@ -117,6 +123,13 @@ const resolvers = {
         // Converts array of photoIDs into an array of photo objects
         .map((photoID) => photos.find((p) => p.id === photoID)),
   },
+  DateTime: new GraphQLScalarType({
+    name: "DateTime",
+    description: "A valid date time value.",
+    parseValue: (value) => new Date(value),
+    serialize: (value) => new Date(value).toISOString(),
+    parseLiteral: (ast) => ast.value,
+  }),
 };
 
 // 2. Create a new instance of the server.
