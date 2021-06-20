@@ -2,6 +2,12 @@
 const { ApolloServer } = require("apollo-server");
 
 const typeDefs = ` 
+    type User { 
+        githubLogin: ID! 
+        name: String 
+        avatar: String 
+        postedPhotos: [Photo!]! 
+    }
     enum PhotoCategory { 
         SELFIE 
         PORTRAIT 
