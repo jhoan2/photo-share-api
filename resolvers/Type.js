@@ -1,34 +1,47 @@
 const { GraphQLScalarType } = require("graphql");
+const { ObjectID } = require("mongodb");
 
 module.exports = {
   Photo: {
-    url: (parent) => `http://yoursite.com/img/ ${parent.id} .jpg`,
-    postedBy: (parent) => {
-      return users.find((u) => u.githubLogin === parent.githubUser);
-    },
+    id: (parent) => parent.id || parent._id,
 
-    taggedUsers: (parent) =>
-      tags
-        // Returns an array of tags that only contain the current photo
-        .filter((tag) => tag.photoID === parent.id)
-        // Converts the array of tags into an array of userIDs
-        .map((tag) => tag.userID)
-        // Converts array of userIDs into an array of user objects
-        .map((userID) => users.find((u) => u.githubLogin === userID)),
-  },
-  User: {
-    postedPhotos: (parent) => {
-      return photos.filter((p) => p.githubUser === parent.githubLogin);
+    url: (parent) => `/img/photos/${parent._id}.jpg`,
+
+    postedBy: (parent, args, { db }) =>
+      db.collection("users").findOne({ githubLogin: parent.userID }),
+
+    taggedUsers: async (parent, args, { db }) => {
+      const tags = await db.collection("tags").find().toArray();
+
+      const logins = tags
+        .filter((t) => t.photoID === parent._id.toString())
+        .map((t) => t.githubLogin);
+
+      return db
+        .collection("users")
+        .find({ githubLogin: { $in: logins } })
+        .toArray();
     },
-    inPhotos: (parent) =>
-      tags
-        // Returns an array of tags that only contain the current user
-        .filter((tag) => tag.userID === parent.id)
-        // Converts the array of tags into an array of photoIDs
-        .map((tag) => tag.photoID)
-        // Converts array of photoIDs into an array of photo objects
-        .map((photoID) => photos.find((p) => p.id === photoID)),
   },
+
+  User: {
+    postedPhotos: (parent, args, { db }) =>
+      db.collection("photos").find({ userID: parent.githubLogin }).toArray(),
+
+    inPhotos: async (parent, args, { db }) => {
+      const tags = await db.collection("tags").find().toArray();
+
+      const photoIDs = tags
+        .filter((t) => t.githubLogin === parent.githubLogin)
+        .map((t) => ObjectID(t.photoID));
+
+      return db
+        .collection("photos")
+        .find({ _id: { $in: photoIDs } })
+        .toArray();
+    },
+  },
+
   DateTime: new GraphQLScalarType({
     name: "DateTime",
     description: "A valid date time value.",
